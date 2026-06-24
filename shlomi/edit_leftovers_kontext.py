@@ -56,9 +56,18 @@ from diffusers import FluxKontextPipeline  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import utils                            # noqa: E402
 
-SRC_DIR = Path(args.src) if args.src else (utils.CLEAN_DIR / "full")
-OUT_DIR = Path(args.out) if args.out else (utils.CLEAN_DIR / "finished_leftovers")
+SRC_DIR = (Path(args.src) if args.src else (utils.CLEAN_DIR / "full")).resolve()
+OUT_DIR = (Path(args.out) if args.out else (utils.CLEAN_DIR / "finished_leftovers")).resolve()
 MANIFEST = OUT_DIR / "kontext_manifest.csv"
+
+
+def _rel(p) -> str:
+    """Path relative to the repo if possible, else absolute (robust for any --out)."""
+    p = Path(p).resolve()
+    try:
+        return str(p.relative_to(utils.ROOT_DIR))
+    except ValueError:
+        return str(p)
 
 # How much food the edit should leave (we want only ~a quarter / fifth).
 EAT_AMOUNTS = [
@@ -115,21 +124,21 @@ def main() -> None:
         seed = utils.SEED + i
         rng = random.Random(seed)               # deterministic instruction per image
         instruction = build_instruction(rng)
-        image = Image.open(src).convert("RGB").resize((args.size, args.size))
+        # Kontext picks its own (1024) working resolution; let it, then downscale the
+        # result to args.size for dataset consistency with the FLUX-dev set.
+        image = Image.open(src).convert("RGB")
         edited = pipe(
             image=image,
             prompt=instruction,
-            height=args.size, width=args.size,
             guidance_scale=args.guidance,
             num_inference_steps=args.steps,
             generator=torch.Generator("cpu").manual_seed(seed),
         ).images[0]
-        edited.save(out_fp, quality=95)
+        edited.resize((args.size, args.size)).save(out_fp, quality=95)
         made += 1
         rate = (time.time() - t0) / made
         log(f"{i + 1}/{len(srcs)}  {rate:.0f}s/img  ETA ~{rate * (len(srcs) - i - 1) / 60:.0f} min")
-        rows.append([str(out_fp.relative_to(utils.ROOT_DIR)),
-                     str(src.relative_to(utils.ROOT_DIR)), seed, instruction])
+        rows.append([_rel(out_fp), _rel(src), seed, instruction])
 
     with open(MANIFEST, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
