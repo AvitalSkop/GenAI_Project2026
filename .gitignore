@@ -229,6 +229,8 @@ shlomi/data/synthetic_clean/
 shlomi/data/synthetic_clean_gemini/
 shlomi/data/synthetic_degraded/
 shlomi/data/_pilot/
+shlomi/data/_ip2p_test/
+shlomi/data/_kontext_test/
 
 # Trained model weights / checkpoints
 *.pt
