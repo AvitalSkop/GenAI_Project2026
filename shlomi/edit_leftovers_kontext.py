@@ -50,9 +50,11 @@ ap.add_argument("--out", default=None,
 ap.add_argument("--overwrite", action="store_true", help="re-edit even if the output already exists")
 ap.add_argument("--dtype", choices=["bf16", "fp16", "fp32"], default="bf16",
                 help="bf16 avoids the fp16 NaN/black-image bug Kontext hits on V100 (default)")
-ap.add_argument("--max-side", type=int, default=512,
-                help="working resolution: Kontext defaults to 1024 (OOMs a 32GB V100). 512 keeps "
-                     "the attention small enough to fit and matches our dataset size.")
+ap.add_argument("--max-side", type=int, default=768,
+                help="square working resolution. 768 is near Kontext's native 1024 (good framing) "
+                     "and fits 8-bit on a 32GB V100; 1024 OOMs on V100 (no FlashAttention). We pass "
+                     "this as explicit height/width with _auto_resize=False so Kontext SCALES rather "
+                     "than crops (diffusers #12406). Output is still downscaled to --size on save.")
 ap.add_argument("--offload", choices=["model", "sequential"], default="sequential",
                 help="ONLY used with --quant none. model = keeps the 24GB transformer on GPU "
                      "(OOMs a 32GB V100); sequential = streams layers, fits but very slow")
@@ -186,13 +188,14 @@ def main() -> None:
         seed = utils.SEED + i
         rng = random.Random(seed)               # deterministic instruction per image
         instruction = build_instruction(rng)
-        # Kontext picks its own (1024) working resolution; let it, then downscale the
-        # result to args.size for dataset consistency with the FLUX-dev set.
-        image = Image.open(src).convert("RGB")
+        # Feed a square input at the working resolution and pass explicit height/width with
+        # _auto_resize=False so Kontext SCALES (keeps the whole plate) instead of snapping to a
+        # preferred resolution and cropping (diffusers #12406). Then downscale to args.size on save.
+        image = Image.open(src).convert("RGB").resize((args.max_side, args.max_side), Image.LANCZOS)
         edited = pipe(
             image=image,
             prompt=instruction,
-            max_area=args.max_side * args.max_side,  # cap resolution -> fits 32GB, faster
+            height=args.max_side, width=args.max_side, _auto_resize=False,
             guidance_scale=args.guidance,
             num_inference_steps=args.steps,
             generator=torch.Generator("cpu").manual_seed(seed),
