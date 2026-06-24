@@ -132,8 +132,11 @@ PLATE_SHAPES = [
     ("round dinner plate", 48),
     ("oval plate", 11),
     ("square plate", 11),
-    ("shallow pasta bowl", 10),
-    ("deep dish", 9),
+    # NOTE: never name a FOOD here. "pasta bowl" / "deep dish (pizza)" are literal
+    # nouns FLUX renders as food, contaminating empty/clean plates. Keep shapes
+    # food-free so the shape pool carries no label signal.
+    ("shallow wide bowl", 10),
+    ("deep round bowl", 9),
     ("rectangular plate", 6),
     ("small round appetizer plate", 5),
 ]
@@ -207,18 +210,24 @@ CLASS_CONTENTS = {
         "an empty plate after a meal, just grease marks and a few crumbs, no food",
         "a wiped-out plate with only faint sauce stains and scattered crumbs, no food remaining",
     ],
+    # Lead with the EMPTINESS and use FLUX's "with emphasis on" phrasing (it has no
+    # prompt weights). Describe the scattered REMAINS, not the full dish, or FLUX
+    # renders a full serving of {food} and ignores "a few bites". Strong remnant
+    # words (scraps, smears, crumbs, half-eaten, mostly gone) anchor the small amount.
     "finished_leftovers": [
-    "a few leftover bites of {food} on an otherwise nearly empty plate",
-    "a nearly finished plate of {food}, only a few small scraps left",
-    "a mostly eaten plate with just a few bites of {food} left in one corner",
-    "a nearly empty plate with small remaining pieces of {food}",
+    "a mostly eaten plate, with emphasis on how little is left: just a few small scraps of {food} pushed to one side, with sauce smears and crumbs across an otherwise empty plate",
+    "the messy remains of a meal, only a couple of leftover bites of {food} among streaks of sauce and scattered crumbs, with most of the food already eaten",
+    "a nearly empty plate after eating, just a small leftover scrap of {food} in one corner, the rest wiped down to sauce stains and crumbs",
+    "a half-eaten plate with only a little {food} remaining in one corner, with emphasis on the empty messy surface, leftover sauce and crumbs",
     ],
-    # `full` now spans moderate -> full (the old semi_full and full classes merged).
+    # `full` spans moderate -> full (the old semi_full and full classes merged).
+    # Add "casually/unevenly served" so the food looks real and homestyle, not the
+    # over-symmetrical studio plating FLUX defaults to.
     "full": [
-    "a full plate of {food}, a complete fresh portion piled high",
-    "a generous full serving of {food} filling the whole plate",
-    "a plate completely covered with a hearty portion of {food}",
-    "a plate filled with a large portion of {food}",
+    "a full plate of {food}, a complete fresh portion, casually served and a bit uneven",
+    "a generous serving of {food} piled unevenly across the whole plate, plated homestyle and slightly messy",
+    "a plate heaped with a large helping of {food}, sauce splashed naturally, not neatly arranged",
+    "a plate filled with a hearty portion of {food}, casually served so it looks real and unstaged",
     ],
 }
 
@@ -231,7 +240,8 @@ CLASS_CONTENTS = {
 PROMPT_TEMPLATE = (
     "{style} {shape} on {surface}, viewed from {angle}, "
     "with {contents}, {cutlery}, under {lighting}. "
-    "A close-up overhead photo of a single plate filling the frame."
+    "A candid, slightly imperfect overhead phone snapshot of a single plate "
+    "filling the frame, natural and unstaged."
 )
 
 
