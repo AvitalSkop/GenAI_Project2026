@@ -22,8 +22,26 @@ ap.add_argument("--sz", type=int, default=200, help="thumbnail size in px")
 ap.add_argument("--base", default=None,
                 help="folder holding per-class subdirs (default: the FLUX synthetic_clean). "
                      "e.g. data/synthetic_clean_gemini for the Gemini A/B set")
+ap.add_argument("--flat", default=None,
+                help="grid ALL images in a single flat folder (no class rows), e.g. a "
+                     "Kontext output dir. Overrides --base.")
 ap.add_argument("--out", default=None, help="output PNG path")
 args = ap.parse_args()
+
+if args.flat:
+    # Single flat folder -> a compact square-ish grid of every image in it.
+    flat = Path(args.flat)
+    files = sorted(flat.glob("*.jpg"))
+    cols = args.n
+    rows = max(1, (len(files) + cols - 1) // cols)
+    grid = Image.new("RGB", (cols * args.sz, rows * args.sz), "white")
+    for k, f in enumerate(files):
+        thumb = Image.open(f).convert("RGB").resize((args.sz, args.sz))
+        grid.paste(thumb, ((k % cols) * args.sz, (k // cols) * args.sz))
+    out = Path(args.out) if args.out else Path(__file__).resolve().parent / f"grid_{flat.name}.png"
+    grid.save(out)
+    print("saved", out, "|", len(files), "images from", flat)
+    sys.exit(0)
 
 base = Path(args.base) if args.base else utils.CLEAN_DIR
 classes = utils.CLASS_NAMES

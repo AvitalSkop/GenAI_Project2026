@@ -41,6 +41,9 @@ ap.add_argument("--size", type=int, default=512, help="edit resolution (match th
 ap.add_argument("--steps", type=int, default=28, help="num_inference_steps")
 ap.add_argument("--guidance", type=float, default=2.5, help="Kontext guidance_scale (~2.5-4)")
 ap.add_argument("--limit", type=int, default=0, help="cap how many source images to edit (0 = all)")
+ap.add_argument("--out", default=None,
+                help="output folder (default: synthetic_clean/finished_leftovers, in place). "
+                     "Use a new folder to keep the originals for an A/B compare.")
 ap.add_argument("--overwrite", action="store_true", help="re-edit even if the output already exists")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-Kontext-dev")
 args = ap.parse_args()
@@ -54,7 +57,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import utils                            # noqa: E402
 
 SRC_DIR = Path(args.src) if args.src else (utils.CLEAN_DIR / "full")
-OUT_DIR = utils.CLEAN_DIR / "finished_leftovers"
+OUT_DIR = Path(args.out) if args.out else (utils.CLEAN_DIR / "finished_leftovers")
 MANIFEST = OUT_DIR / "kontext_manifest.csv"
 
 # How much food the edit should leave (we want only ~a quarter / fifth).
