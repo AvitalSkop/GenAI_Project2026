@@ -427,3 +427,33 @@ def load_prompts(path: Path = PROMPTS_PATH) -> dict[str, list[str]]:
     """Load the prompts dict from JSON (keyed by class)."""
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+# ---------------------------------------------------------------------------
+# Eat-down EDIT instruction (for the image-editing leftovers pipeline).
+# Unlike the text-to-image prompts above, this is an INSTRUCTION given to an
+# image+text editing model (SDXL-InstructPix2Pix) to take a full plate and make
+# it look mostly eaten (~a quarter left). Shared by the edit_leftovers_* scripts.
+# ---------------------------------------------------------------------------
+EAT_INSTRUCTION_AMOUNTS = [
+    "only about a quarter of the food left",
+    "roughly a fifth of the meal remaining",
+    "just a few small scraps of food left",
+    "only a small amount of food remaining in one corner",
+]
+
+
+def build_eat_instruction(rng: random.Random) -> str:
+    """Randomized 'eat-down' edit instruction (~1/2 of plates get cutlery, ~1/4 a napkin)."""
+    parts = [
+        f"Make the plate look like a person has eaten most of the meal, leaving "
+        f"{rng.choice(EAT_INSTRUCTION_AMOUNTS)}:",
+        "scattered messy scraps to one side, smeared sauce, scattered crumbs and bite marks, with "
+        "the rest of the plate empty and bare.",
+    ]
+    parts.append("Leave a dirty fork or spoon resting in the plate."
+                 if rng.random() < 0.5 else "Leave no cutlery on the plate.")
+    if rng.random() < 0.25:
+        parts.append("Leave a crumpled used paper napkin inside the plate.")
+    parts.append("Keep the same plate, table, lighting and camera angle.")
+    return " ".join(parts)

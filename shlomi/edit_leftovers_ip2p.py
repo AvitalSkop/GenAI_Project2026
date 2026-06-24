@@ -59,14 +59,6 @@ SRC_DIR = (Path(args.src) if args.src else (utils.CLEAN_DIR / "full")).resolve()
 OUT_DIR = (Path(args.out) if args.out else (utils.CLEAN_DIR / "finished_leftovers")).resolve()
 MANIFEST = OUT_DIR / "ip2p_manifest.csv"
 
-# How much food the edit should leave (we want only ~a quarter / fifth).
-EAT_AMOUNTS = [
-    "only about a quarter of the food left",
-    "roughly a fifth of the meal remaining",
-    "just a few small scraps of food left",
-    "only a small amount of food remaining in one corner",
-]
-
 
 def log(msg: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
@@ -78,21 +70,6 @@ def _rel(p) -> str:
         return str(p.relative_to(utils.ROOT_DIR))
     except ValueError:
         return str(p)
-
-
-def build_instruction(rng: random.Random) -> str:
-    """Randomized 'eat-down' edit instruction (~1/2 cutlery, ~1/4 napkin)."""
-    parts = [
-        f"Make the plate look like a person has eaten most of the meal, leaving {rng.choice(EAT_AMOUNTS)}:",
-        "scattered messy scraps to one side, smeared sauce, scattered crumbs and bite marks, with the "
-        "rest of the plate empty and bare.",
-    ]
-    parts.append("Leave a dirty fork or spoon resting in the plate."
-                 if rng.random() < 0.5 else "Leave no cutlery on the plate.")
-    if rng.random() < 0.25:
-        parts.append("Leave a crumpled used paper napkin inside the plate.")
-    parts.append("Keep the same plate, table, lighting and camera angle.")
-    return " ".join(parts)
 
 
 def main() -> None:
@@ -123,7 +100,7 @@ def main() -> None:
             continue
         seed = utils.SEED + i
         rng = random.Random(seed)
-        instruction = build_instruction(rng)
+        instruction = utils.build_eat_instruction(rng)
         image = Image.open(src).convert("RGB").resize((args.res, args.res), Image.LANCZOS)
         edited = pipe(
             prompt=instruction,
