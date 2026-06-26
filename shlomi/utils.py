@@ -200,6 +200,18 @@ FOOD_ITEMS = [
     "pancakes with syrup", "scrambled eggs and toast", "omelette and salad",
 ]
 
+# Leftover-friendly foods for `finished_leftovers` ONLY. Error analysis showed solid /
+# composite plated meals (steak & mash, salmon & asparagus, stir-fry & rice) get drawn
+# as FULL servings - you can't render "a tiny smear of a steak". Saucy / amorphous /
+# scrappy foods render believably as a small remnant, so we restrict this class to them.
+LEFTOVER_FOODS = [
+    "tomato pasta sauce", "bolognese sauce", "creamy white pasta sauce", "cheese sauce",
+    "curry sauce", "lentil dahl", "butter chicken sauce", "gravy", "salsa", "hummus",
+    "guacamole", "refried beans", "baked beans", "mashed potato", "scrambled egg",
+    "tomato soup", "vegetable soup", "ramen broth",
+    "fried rice", "caesar salad", "greek salad", "nachos with melted cheese",
+]
+
 # Per-class content phrasings - THIS is what actually defines the label.
 # "{food}" is filled from FOOD_ITEMS for the food-bearing classes.
 CLASS_CONTENTS = {
@@ -225,15 +237,15 @@ CLASS_CONTENTS = {
         "an almost spotless used plate with a faint food smear and a couple of crumbs, the food all eaten",
         "a cleaned-off plate showing only grease marks, sauce stains and a stray crumb or two",
     ],
-    # GOAL: "most of the dish was eaten" - an almost-bare plate, ready to clear. Make
-    # the EMPTY PLATE the subject ("almost entirely empty", "scraped nearly clean",
-    # "most of the food already eaten") and reduce {food} to a tiny smear/remnant, so
-    # it reads clearly emptier than `full` (the boundary).
+    # GOAL: "most of the dish was eaten" - an almost-bare plate, ready to clear. Error
+    # analysis: phrasings that lead with EMPTINESS + the word "smear"/"scraps" produce a
+    # small remnant; "a little leftover {food} pushed to one side" let FLUX draw a real
+    # portion (80% over-filled), so it is removed. {food} comes from LEFTOVER_FOODS only.
     "finished_leftovers": [
         "an almost entirely empty plate at the end of a meal, most of the food already eaten, with only a tiny smear of {food}, a few crumbs and sauce streaks left in one corner",
-        "a plate scraped nearly clean, just a single small leftover bite of {food} remaining among smudges of dried sauce, with the rest of the meal already eaten",
-        "a mostly bare plate after eating, only a small remnant of {food} and scattered crumbs left, clearly almost finished and ready to be cleared",
-        "a largely empty plate, the meal nearly done and most of it eaten, with just a little leftover {food} pushed to one side and sauce smears across the plate",
+        "a plate scraped nearly clean, with just a smear of {food} and a few scattered crumbs left, the rest of the meal already eaten",
+        "a mostly bare plate after eating, only faint scraps and a smear of {food} remaining among streaks of dried sauce",
+        "a nearly empty plate, the meal finished, with just a small smear of {food} and a few crumbs left in one corner",
     ],
     # `full` spans MODERATE -> full (old semi_full + full merged) and is "do not
     # clear". Mix complete portions with meals-in-progress that still have PLENTY of
@@ -285,8 +297,10 @@ def _weighted(rng: random.Random, pairs: list[tuple[str, int]]) -> str:
 def _make_contents(rng: random.Random, class_name: str) -> str:
     """Pick a content phrasing for a class, filling in food and (for eaten-from plates) a napkin."""
     phrasing = rng.choice(CLASS_CONTENTS[class_name])
+    # finished_leftovers uses the curated smearable LEFTOVER_FOODS; other classes use FOOD_ITEMS.
+    foods = LEFTOVER_FOODS if class_name == "finished_leftovers" else FOOD_ITEMS
     if "{food}" in phrasing:
-        phrasing = phrasing.format(food=rng.choice(FOOD_ITEMS))
+        phrasing = phrasing.format(food=rng.choice(foods))
     # ~1/3 of empty / finished_leftovers plates get a used napkin (a "done eating" cue).
     if class_name in NAPKIN_CLASSES and rng.random() < NAPKIN_PROB:
         phrasing = f"{phrasing}, with {rng.choice(USED_NAPKINS)}"
