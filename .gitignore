@@ -241,3 +241,9 @@ checkpoints/
 
 # Redundant local archive (the extracted real_restaurant_cctv/ folder is committed instead)
 restaurant cctv.zip
+
+avital/data/
+data/
+*.png
+*.jpg
+*.jpeg
