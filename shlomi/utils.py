@@ -13,6 +13,7 @@ Import this module from every notebook; never redefine these values ad hoc.
 from __future__ import annotations
 
 import json
+import os
 import random
 from pathlib import Path
 
@@ -69,7 +70,9 @@ def to_binary(class_name: str) -> str:
 # on Colab, as long as this file stays in code/).
 # ---------------------------------------------------------------------------
 ROOT_DIR = Path(__file__).resolve().parent              # the shlomi/ workspace root (utils.py lives here)
-DATA_DIR = ROOT_DIR / "data"
+# Data root is overridable via the PLATE_DATA_ROOT env var so a container/GPU box can point at
+# its own data location WITHOUT editing any notebook cell. Defaults to shlomi/data/ locally.
+DATA_DIR = Path(os.environ.get("PLATE_DATA_ROOT", ROOT_DIR / "data"))
 PROMPTS_PATH = DATA_DIR / "prompts.json"
 CLEAN_DIR = DATA_DIR / "synthetic_clean"                # undegraded images, per-class subfolders
 DEGRADED_DIR = DATA_DIR / "synthetic_degraded"          # degraded images, per-class subfolders

@@ -1,0 +1,2 @@
+# Shell scripts must keep LF endings so they run in Linux/GPU containers
+*.sh text eol=lf
