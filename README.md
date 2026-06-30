@@ -79,9 +79,6 @@ We evaluate multiple models:
 - ResNet18 (Linear Probe + Fine-Tuning)
 - ResNet50 (Linear Probe + Fine-Tuning)
 
-### CLIP (Baseline)
-- Zero-shot classification using text prompts
-
 ---
 
 ## Pipeline
@@ -149,9 +146,8 @@ Pipeline steps:
 
 ### Machine Learning
 - Improve augmentation realism  
-- Combine models (CLIP + CNN)  
-- Explore self-supervised methods (e.g., DINO)  
-
+- Combine models  
+- Explore self-supervised methods 
 ---
 
 ## Dataset
