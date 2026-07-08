@@ -120,33 +120,51 @@ These simulate the **image formation process of real cameras**.
 ## Model Comparison
 
 | Model         | Synthetic Acc | Real Acc |
-|---------------|--------------|----------|
-| ResNet18 (LP) | 88%          | 91%      |
-| ResNet18 (FT) | 96%          | 93%      |
-| ResNet50 (LP) | 88%          | 93%      |
-| ResNet50 (FT) | 95%          | 94%      |
+|---------------|---------------|----------|
+| ResNet18 (LP) | 88.9%         | 91.1%    |
+| ResNet18 (FT) | 95.6%         | 95.6%    |
+| ResNet50 (LP) | 88.4%         | 91.1%    |
+| ResNet50 (FT) | 94.7%         | 93.3%    |
 
 ---
 
 ## Dataset Access
 
-Synthetic dataset and real samples:
+The dataset is available via Google Drive:
 
 👉 https://drive.google.com/drive/folders/1aZMwEyLMoWOu5gHtUaGOTgruwigfjvJQ
+
+The Drive folder contains:
+
+- Final processed datasets (after train/validation/test split)
+- Real-world test samples
 
 ---
 
 ## Repository Structure
 
+```
 GenAI_Project2026/
+│   
+├── code/            # notebooks & utilities scripts
+├── Images/          # README figures
+├── Presentations/   # slides
+├── visuals/         # training results & plots
 │
-├── data/ # datasets (synthetic + real)
-├── notebooks/ # training & experiments (ResNet, CLIP, DINO)
-├── code/ # scripts and utilities
-├── Images/ # README figures
-├── Presentations/ # slides
 ├── README.md
 └── requirements.txt
+```
+
+## How to Run
+
+This project follows a sequential pipeline. Each step is implemented as a notebook/script and should be executed in order.
+
+Recommended: Run on a GPU machine (for FLUX and model training)
+
+Install dependencies:
+```
+pip install -r requirements.txt
+```
 
 ---
 
