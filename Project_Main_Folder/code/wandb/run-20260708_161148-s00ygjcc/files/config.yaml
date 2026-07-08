@@ -1,0 +1,149 @@
+_wandb:
+    value:
+        cli_version: 0.28.0
+        e:
+            n7i24j7do6t6q1s1zrixa0og397xgug2:
+                codePath: /home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code/05_train_model.ipynb
+                codePathLocal: 05_train_model.ipynb
+                cpu_count: 40
+                cpu_count_logical: 80
+                cudaVersion: "12.8"
+                disk:
+                    /:
+                        total: "469166645248"
+                        used: "392579485696"
+                email: sghlomi@gmail.com
+                executable: /home/benshise/my_new_project/.venv/bin/python
+                git:
+                    commit: 2ae18cb5779858b8c3eacc2173931578d2be5c3a
+                    remote: https://github.com/AvitalSkop/genai-project.git
+                gpu: Tesla V100-SXM2-32GB
+                gpu_count: 8
+                gpu_nvidia:
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-ae418844-5edf-ed4c-434f-46f6acd56aea
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-0ce723c7-9713-a8d0-f864-509705f27b48
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-7e968f31-35a1-0624-c830-df52fb6b6f5a
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-2ca7b683-2e73-9a8f-da67-76718ebb0b83
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-8ad20938-896d-fecb-cc6b-f4c634ab3b8f
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-27cac85f-3734-e2b9-184e-bfd67d0ea309
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-5601ecef-5e97-8b58-b5ef-167ab4940d40
+                    - architecture: Volta
+                      cudaCores: 5120
+                      memoryTotal: "34359738368"
+                      name: Tesla V100-SXM2-32GB
+                      uuid: GPU-7e5a7406-a4e4-0515-d8ec-0f900b21f7f6
+                host: dgx01
+                memory:
+                    total: "540904402944"
+                os: Linux-5.4.0-214-generic-x86_64-with-glibc2.39
+                program: /home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code/05_train_model.ipynb
+                python: CPython 3.12.3
+                root: /home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code
+                startedAt: "2026-07-08T16:11:48.323797Z"
+                writerId: n7i24j7do6t6q1s1zrixa0og397xgug2
+        m: []
+        python_version: 3.12.3
+        t:
+            "1":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 53
+                - 71
+            "2":
+                - 1
+                - 5
+                - 11
+                - 41
+                - 49
+                - 53
+                - 71
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.12.3
+            "5": 0.28.0
+            "6": 4.57.6
+            "8":
+                - 1
+            "12": 0.28.0
+            "13": linux-x86_64
+        visualize:
+            confusion_matrix:
+                panel_config:
+                    fieldSettings:
+                        Actual: Actual
+                        Predicted: Predicted
+                        nPredictions: nPredictions
+                    panelDefId: wandb/confusion_matrix/v1
+                    stringSettings:
+                        title: Confusion Matrix Curve
+                    transform:
+                        name: tableWithLeafColNames
+                    userQuery:
+                        queryFields:
+                            - args:
+                                - name: runSets
+                                  value: ${runSets}
+                              fields:
+                                - fields: []
+                                  name: id
+                                - fields: []
+                                  name: name
+                                - fields: []
+                                  name: _defaultColorIndex
+                                - args:
+                                    - name: tableKey
+                                      value: confusion_matrix_table
+                                  fields: []
+                                  name: summaryTable
+                              name: runSets
+                panel_type: Vega2
+classes:
+    value:
+        - clean
+        - finished
+        - full
+epochs:
+    value: 15
+lr:
+    value: 1e-05
+model:
+    value: resnet18_finetuned
+patience:
+    value: 4
+unfreeze:
+    value: layer4+fc
+weight_decay:
+    value: 0.001

@@ -1,0 +1,89 @@
+{
+  "os": "Linux-5.4.0-214-generic-x86_64-with-glibc2.39",
+  "python": "CPython 3.12.3",
+  "startedAt": "2026-07-08T16:03:43.392132Z",
+  "program": "/home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code/05_train_model.ipynb",
+  "codePath": "/home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code/05_train_model.ipynb",
+  "codePathLocal": "05_train_model.ipynb",
+  "git": {
+    "remote": "https://github.com/AvitalSkop/genai-project.git",
+    "commit": "2ae18cb5779858b8c3eacc2173931578d2be5c3a"
+  },
+  "email": "sghlomi@gmail.com",
+  "root": "/home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code",
+  "host": "dgx01",
+  "executable": "/home/benshise/my_new_project/.venv/bin/python",
+  "cpu_count": 40,
+  "cpu_count_logical": 80,
+  "gpu": "Tesla V100-SXM2-32GB",
+  "gpu_count": 8,
+  "disk": {
+    "/": {
+      "total": "469166645248",
+      "used": "392577953792"
+    }
+  },
+  "memory": {
+    "total": "540904402944"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-ae418844-5edf-ed4c-434f-46f6acd56aea"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-0ce723c7-9713-a8d0-f864-509705f27b48"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-7e968f31-35a1-0624-c830-df52fb6b6f5a"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-2ca7b683-2e73-9a8f-da67-76718ebb0b83"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-8ad20938-896d-fecb-cc6b-f4c634ab3b8f"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-27cac85f-3734-e2b9-184e-bfd67d0ea309"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-5601ecef-5e97-8b58-b5ef-167ab4940d40"
+    },
+    {
+      "name": "Tesla V100-SXM2-32GB",
+      "memoryTotal": "34359738368",
+      "cudaCores": 5120,
+      "architecture": "Volta",
+      "uuid": "GPU-7e5a7406-a4e4-0515-d8ec-0f900b21f7f6"
+    }
+  ],
+  "cudaVersion": "12.8",
+  "writerId": "rlzs6vaqenaxzectfpv7tj39a3ziyq31"
+}
