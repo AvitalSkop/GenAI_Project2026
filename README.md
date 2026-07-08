@@ -94,7 +94,14 @@ These simulate the **image formation process of real cameras**.
 
 ---
 
-## Results
+## Metrics
+
+- Accuracy  
+- Confusion Matrix  
+
+---
+
+## Confusion Matrix Results
 
 ### ResNet18
 
@@ -110,14 +117,7 @@ These simulate the **image formation process of real cameras**.
 
 ---
 
-## Metrics
-
-- Accuracy  
-- Confusion Matrix  
-
----
-
-## Model Comparison
+## Model Comparison (on test data)
 
 | Model         | Synthetic Acc | Real Acc |
 |---------------|---------------|----------|
