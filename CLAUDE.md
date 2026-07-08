@@ -1,45 +1,98 @@
 # CLAUDE.md — Plate Status Detection
 
-GenAI course final project. A classifier that decides whether a restaurant table's plate should be cleared, from a single low-quality security-camera image.
+GenAI course final project. A classifier that decides whether a restaurant table's plate should be
+**cleared**, from a single low-quality security-camera image. Training/eval data is **100% synthetic**
+(FLUX.1-dev generation + CCTV-style degradation).
 
-## Source of truth
-`Project_Plan_Plate_Status_Detection_3.md` is the full spec. **Read it before building anything.** This file holds only the rules and conventions that must hold in every session; the plan holds the detail.
+## Layout
+```
+Project Main Folder/
+  code/     # notebooks 01-06 + all .py + run_in_container.sh + secrets.env + requirements.txt
+  data/     # prompts.json + image sets (Diff_DataSet, synthetic_degraded, splits, real_test)
+  weights/  # trained model weights (.pth)                      [gitignored]
+```
+`code/utils.py` is the **single source of truth** (seed, class list, binary rule, paths, prompt
+builder). Every notebook imports it — never redefine those values ad hoc. `data/` and `weights/` are
+**siblings** of `code/` (utils resolves them via `PROJECT_DIR = ROOT_DIR.parent`). The data root is
+overridable with the `PLATE_DATA_ROOT` env var **without editing any cell** (used on the GPU box).
 
 ## Critical domain rules (easy to get wrong — get these right)
-- **Input is ONE still image of ONE plate.** Not video, not a sequence of frames. The crop is done by an upstream model and is out of scope — assume the input is already a tight, cropped single plate.
-- **Three training classes, defined by the plate's visible state** (not by cutlery, not by whether a diner is present). The model is trained on these 3:
-  - `clean` — pristine, fresh, **unused** plate; no food, no crumbs, no residue → **do not clear**
-  - `finished` — the meal is **over**: a used plate eaten bare (crumbs/sauce/residue) **or** with only small leftovers / garbage (napkin, paper) → **clear**
+- **Input is ONE still image of ONE plate** (not video, not a sequence). The crop is done upstream and
+  is out of scope — assume a tight, single-plate crop.
+- **3 classes, defined by the plate's visible state** (never by cutlery, never by whether a diner is present):
+  - `clean` — pristine, **unused** plate; no food, no crumbs → **do not clear**
+  - `finished` — the meal is **over**: eaten bare (crumbs/sauce/residue) **or** only small leftovers → **clear**
   - `full` — a **moderate-to-full** serving of food → **do not clear**
-- **Data is GENERATED with a finer 5-class scheme, then consolidated to the 3 above.** Generation classes (in `utils.py` / `prompts.json`): `clean`, `empty` (eaten bare), `finished_leftovers` (small leftovers/garbage), `full`, `unclassified` (borrowed prompts, later corrupted until unreadable). Consolidation for training: `empty` + `finished_leftovers` → `finished`; `unclassified` is **dropped**. `utils.py`/`prompts.json` keep the 5-class generation lineage; `03`–`05` use the 3 classes read directly from the class folders on disk. Full mapping in `shlomi/data/class_taxonomy.md`. (The Project Plan still describes the older 5-class scheme.)
-- **Binary decision rule (non-monotonic by design):** `clear = {finished}`, `do not clear = {clean, full}`. A `clean` plate has the least on it yet is *do not clear* (freshly set, diner about to eat), while `finished` (scraps) is *clear* and `full` (most food) is *do not clear* — so "clear" is a band in the middle of the food-amount axis, not a threshold. This non-monotonic boundary is the main reason the fine-grained model exists.
-- **`clean` vs `finished` is the subtlest pair — watch it.** Pristine-unused vs eaten-bare-with-crumbs can blur together under heavy degradation; expect that confusion in the matrix and treat it as error-analysis material, not a bug.
-- **Cutlery is a nuisance attribute, not a label signal.** Vary it randomly across all classes in prompts so the model keys on food amount, never on cutlery presence.
-- **`real_restaurant_cctv/` images are calibration/inspiration ONLY — never training or test data.** Use them to (a) inform diffusion prompts and (b) measure realistic degradation parameters (resolution, noise, blur, JPEG quality). The training/eval dataset is 100% synthetic.
+- **Binary rule (NON-MONOTONIC by design):** `clear = {finished}`, `do not clear = {clean, full}`.
+  A `clean` plate has the *least* on it yet is *do not clear* (freshly set), `finished` (scraps) is
+  *clear*, and `full` (the most) is *do not clear* — so "clear" is a band in the **middle** of the
+  food-amount axis, not a threshold. This non-monotonic boundary is why a fine-grained model is needed.
+- **`clean` vs `finished` is the subtlest pair — watch it.** Pristine vs eaten-bare-with-a-few-crumbs
+  blurs under degradation and dominates the real-image errors. Treat it as error-analysis material, not a bug.
+- **Cutlery / napkins are nuisance attributes**, varied randomly with **identical distributions across
+  classes**, so the model keys on food amount and these can never become a shortcut.
+- **`data/real_test/` images are a bonus sanity check / calibration ONLY — never training or val data.**
+  The training/eval set is 100% synthetic.
+
+## Pipeline (in `code/`, run in order)
+| Step | File | Reads → Writes |
+|---|---|---|
+| 01 | `01_generate_prompts.ipynb` | — → `data/prompts.json` (attribute-based; identical nuisance distributions across classes) |
+| 02 | `02_generate_images.ipynb` / `generate_images.py` | prompts → `data/Diff_DataSet_vN/{class}/` (FLUX.1-dev; versioned) |
+| 03 | `03_degrade_and_augment.ipynb` | `data/Diff_DataSet/` → `data/synthetic_degraded/{class}/` (CCTV degradation — **novelty #1**) |
+| 04 | `04_split_dataset.ipynb` | Diff_DataSet + degraded → `data/splits/{train,val,test}/{class}/` |
+| 05 | `05_train_model.ipynb` | `data/splits/` → `weights/` (ResNet18 linear-probe → partial fine-tune; + CLIP baseline) |
+| 06 | `06_train_model_Resnet50.ipynb` | `data/splits/` → `weights/resnet50_best.pth` (ResNet50, alternate backbone) |
+
+- **`Diff_DataSet/`** is the curated **undegraded** set that step 03 reads (`utils.CLEAN_DIR`). NEW
+  generation runs go to fresh versioned folders `Diff_DataSet_v1/_v2/...` (`utils.next_versioned_dir()`)
+  so the curated set is never overwritten.
+- **03 is class-agnostic:** `degrade_image()` never sees the label, so no degradation can correlate with
+  the class. Downscale (always) + a *random subset* of blur / noise / lighting / colour-cast / vignette /
+  JPEG / perspective, 2–5 copies per image, deterministic seeds.
+- **05:** ResNet18 **linear probe** (frozen backbone + new head) → optional **partial fine-tune**
+  (unfreeze `layer4` + head only — full-backbone FT overfits the small synthetic set). Reports accuracy,
+  macro-F1, confusion matrix, the **binary clear/do-not-clear** accuracy, a **CLIP zero-shot baseline**,
+  and a **real-test per-image CSV** (`weights/real_test_predictions.csv`).
 
 ## Hard technical gotchas
-- **SDXL-Turbo ignores negative prompts.** At its intended `guidance_scale=0.0` there is no classifier-free guidance, so a negative prompt does nothing. Either run Turbo with strong positive prompts + manual culling, or switch to SD 1.5 / SDXL-base at `guidance_scale≈7`, `steps≈25` where negatives work. See Project_Plan_Plate_Status_Detection_3.md §4.3.
-- **GPU-heavy work runs on Colab, not locally.** Image generation (SDXL) and fine-tuning (ViT/ResNet50/DINOv2) are written here but executed in Colab. Don't try to run them on this machine.
-- **Never put "security camera" / "CCTV" / "surveillance" in a diffusion prompt.** Those phrases make the model burn a fake HUD overlay (timestamp, "REC", camera id) into the image — a spurious cue the classifier could learn instead of food amount. Keep diffusion outputs clean; the realistic CCTV degradation is added in `03_degrade_and_augment`, never in the prompt. This also keeps the with/without-degradation ablation valid.
+- **Never put "security camera" / "CCTV" / "surveillance" in a FLUX prompt** — it burns a fake HUD
+  (timestamp, "REC", camera id) into the image, a shortcut the classifier would learn instead of food
+  amount. Keep the diffusion output CLEAN; add the CCTV degradation only in step 03 (this also keeps
+  the with/without-degradation ablation valid).
+- **GPU-heavy work runs on the container**, not locally (FLUX generation, training).
+- **FLUX.1-dev is gated** — needs a free HF account + accepted license + a read token (`HF_TOKEN`). Never commit it.
+- **CLIP loads with `use_safetensors=True`** — newer `transformers` refuses `torch.load` of `.bin`
+  weights on torch < 2.6 (CVE-2025-32434); safetensors sidesteps it without upgrading torch.
+- **Eval `Resize((224,224))` squashes non-square images** — real oval/landscape plates get distorted;
+  use `Resize(224) + CenterCrop(224)` if that matters.
 
 ## Conventions
-- Code comments and docstrings in **English**.
-- **Fixed seeds everywhere** (`torch.manual_seed(42)` etc.) — runs must be reproducible.
-- **One shared train/val/test split** lives in `utils.py` and is imported by every notebook. Never re-split ad hoc.
-- **Keep both undegraded and degraded image copies on disk** (`data/synthetic_clean/` = undegraded, `data/synthetic_degraded/`) so the with/without-degradation ablation can run. Note: "clean" in the folder name means *undegraded*, not the `clean` plate-state class — e.g. `data/synthetic_clean/clean/` holds the undegraded images of clean plates.
-- Notebooks must run top-to-bottom on a fresh Colab. `requirements.txt` stays pinned and complete.
+- **Fixed seeds everywhere** (`SEED=42`) — runs reproducible; the degraded set and the splits are deterministic.
+- **Keep both undegraded and degraded copies on disk** (`Diff_DataSet/` + `synthetic_degraded/`) so the
+  with/without-degradation ablation can run.
+- **`code/secrets.env`** (gitignored): `WANDB_API_KEY` (shared team W&B) and `HF_TOKEN`. `05` logs to
+  W&B **only if `WANDB_API_KEY` is set**, otherwise it runs untracked. Never commit secrets.
+- **gitignore:** all image data (`data/`, `*.jpg`/`*.png`) and weights (`*.pth`) are ignored; only
+  `prompts.json` (force-added) and the code are tracked.
+- Notebooks must run top-to-bottom; `requirements.txt` stays pinned and complete.
+- **Working in a notebook on the container:** pull *before* you edit (pulling after editing causes
+  conflicts). Order: pull → edit → commit.
 
-## Repo layout (target)
+## How to run (GPU container)
+```bash
+cd code
+python -m venv ~/plate-train && source ~/plate-train/bin/activate
+pip install -r requirements.txt          # if a CUDA torch already works, drop the torch/torchvision pins
+# 1) put data at  data/Diff_DataSet/{clean,finished,full}/
+# 2) put your HF + W&B keys in  code/secrets.env
+nvidia-smi                                # pick a free GPU
+bash run_in_container.sh 0                # runs 03 -> 04 -> 05 headless on GPU 0
 ```
-slides/  code/  data/  results/  visuals/  README.md  requirements.txt
-```
-Code notebooks are numbered in execution order: `01_generate_prompts` → `02_generate_images` → `03_degrade_and_augment` → `04_train_models` → `05_evaluate` → `06_gradio_app`. See Project_Plan_Plate_Status_Detection_3.md §8 for the full tree.
-
-## How to build
-- **Incrementally, one numbered step at a time.** Validate each before moving on. Do not attempt to build the whole project in one pass.
-- Before scaling image generation, generate **10 per class** and confirm the content states are visually distinct after degradation — pay special attention to `clean` vs eaten-bare (`empty`/`finished`), the subtlest pair. (Generation still uses the finer scheme; `unclassified`, if generated, is *meant* to be unidentifiable after heavier corruption.) Only then scale to the full set.
+Preview before committing to a full run: `python preview_degradation.py 10` (step-03 look) and
+`python preview_train_transform.py` (step-05 live augmentation) — each writes a PNG.
 
 ## Current state
-All five pipeline stages exist in our self-contained fork **`shlomi/`** (its own `utils.py`, paths rooted at `shlomi/data/`): `01_generate_prompts` + `02_generate_images` (**FLUX.1-dev**) build the undegraded set; `03_degrade_and_augment` (class-agnostic CCTV degradation — novelty #1), `04_split_dataset`, and `05_train_model` (ResNet18 + CLIP baseline) split, train and evaluate. Run our notebooks from `shlomi/`. We have **consolidated to 3 training classes** (`clean` / `finished` / `full`) and treat the generated dataset as good enough to train on. Avital owns model training; our focus is the FLUX generation + the CCTV degradation pipeline.
-
-The shared `code/` folder holds the original `utils.py` + `01_generate_prompts.ipynb` **plus Avital's divergent notebooks** (Stable Diffusion generation, ResNet18 + CLIP training: `02_generate_images_clean`, `03_degrade_and_augment`, `04_split_dataset`, `05_train_model_clean`). **Do not modify anything under `code/`** — that's Avital's. See `shlomi/README.md`.
+The full 3-class pipeline runs end to end. ResNet18 reaches ~0.95 synthetic val accuracy and **~85% on
+the real-image sanity set** (errors concentrate on the `clean`↔`finished` boundary, as expected).
+ResNet50 (`06`) is the alternate backbone. W&B project: `plate-classification`.

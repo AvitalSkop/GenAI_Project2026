@@ -252,4 +252,4 @@ data/
 # Secrets (W&B key, HF token) — never commit
 *.env
 secrets.env
-shlomi/wandb/
+/home/benshise/my_new_project/Plates/genai-project/Project_Main_Folder/code/wandb
