@@ -126,6 +126,10 @@ These simulate the **image formation process of real cameras**.
 | ResNet50 (LP) | 88.4%         | 91.1%    |
 | ResNet50 (FT) | 94.7%         | 93.3%    |
 
+To avoid overfitting on the synthetic dataset, we applied partial fine-tuning and unfroze only the last residual block (layer4) in both models.
+
+Due to architectural differences, this results in a larger number of trainable parameters in ResNet50 compared to ResNet18. Consequently, ResNet50 adapts more aggressively to the synthetic data, which can slightly harm generalization and lead to lower performance on real-world images.
+
 ---
 
 ## Dataset Access
@@ -146,28 +150,80 @@ The Drive folder contains:
 ```
 PlateStateNet/
 │
-├── code/            # training scripts & notebooks 
-├── Images/          # figures used in README
-├── visuals/         # results, plots, confusion matrices
-├── Presentations/   # slides & reports
-├── weights/         # trained model checkpoints
+├── code/                              # Main pipeline (notebooks + scripts)
+│   ├── 01_generate_prompts.ipynb      # generate structured prompts  
+│   ├── 02_generate_images.ipynb       # notebook version of generation  
+│   ├── generate_images.py             # headless synthetic image generation (FLUX, resumable)
+│   ├── 03_degrade_and_augment.ipynb   # simulate camera conditions  
+│   ├── preview_degradation.py         # preview degradation without saving  
+│   ├── 04_split_dataset.ipynb         # create train / val / test splits  
+│   ├── 05_train_model_ResNet18.ipynb  # train and evaluate ResNet18  
+│   ├── 06_train_model_ResNet50.ipynb  # train and evaluate ResNet50  
+│   ├── preview_train_transform.py     # visualize training augmentations  
+│   ├── make_grid.py                   # build image grids for visual QA  
+│   ├── run_in_container.sh            # run full pipeline in GPU container  
+│   └── utils.py                       # shared constants, paths, and core logic  
 │
-├── README.md
-└── requirements.txt
+├── Images/                            # figures used in README  
+├── visuals/                           # results, confusion matrices, training curves  
+├── weights/                           # trained model checkpoints  
+├── Presentations/                     # slides & reports  
+│
+├── README.md  
+└── requirements.txt  
 ```
 
 ---
 
 ## How to Run
 
-This project follows a sequential pipeline. Each step is implemented as a notebook/script and should be executed in order.
+This project follows a modular pipeline.  
+You can either run the full pipeline from scratch **or skip directly to training** if you use the provided dataset.
 
-Recommended: Run on a GPU machine (for FLUX and model training)
+---
 
-Install dependencies:
-```
+### 🔹 Option 1 — Full Pipeline (from scratch)
+
+Run the following steps in order:
+
+1. `01_generate_prompts.ipynb`  
+   Generate structured prompts for image synthesis  
+2. `02_generate_images.ipynb` or `generate_images.py`  
+   Generate synthetic dataset using FLUX  
+3. `03_degrade_and_augment.ipynb`  
+   Apply realistic CCTV-style degradation  
+4. `04_split_dataset.ipynb`  
+   Create train / validation / test splits  
+5. `05_train_model_ResNet18.ipynb`  
+6. `06_train_model_ResNet50.ipynb`  
+
+---
+
+### 🔹 Option 2 — Train Only (recommended)
+
+If you downloaded the dataset from Google Drive:
+
+The data is **already split into train / val / test**
+
+You can skip directly to:
+
+- `05_train_model_ResNet18.ipynb`
+- `06_train_model_ResNet50.ipynb`
+
+### Important Notes
+
+- Training notebooks (**05 / 06**) must be executed **cell-by-cell**  
+  Do NOT use "Run All" — this may:
+  - overload GPU memory  
+  - mix LP / FT stages incorrectly  
+
+- A GPU is strongly recommended (for both FLUX generation and training)
+
+---
+
+### Install Dependencies
+
 pip install -r requirements.txt
-```
 
 ---
 
